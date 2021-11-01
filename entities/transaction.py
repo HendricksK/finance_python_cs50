@@ -9,4 +9,3 @@ class Transaction:
         self.stock_symbol = stock_symbol
         self.exchange_id = exchange_id
         self.complete = complete
-        return self

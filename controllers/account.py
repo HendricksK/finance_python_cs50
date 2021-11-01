@@ -48,9 +48,11 @@ def account_register(username, password, config):
 
     if not config.db.execute("SELECT 1 FROM users WHERE username = ?", username):
         user_hash = generate_password_hash(password)
-        if config.db.execute("INSERT INTO users (username, hash) VALUES (?, ?)", username, user_hash):
+        user_id = config.db.execute("INSERT INTO users (username, hash) VALUES (?, ?)", username, user_hash)
+
+        if user_id:
             data["success"] = True
-            data["data"] = {"user_id": db.lastrowid}
+            data["data"] = {"user_id": user_id}
             return data
         else:
             data["success"] = False

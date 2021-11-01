@@ -7,6 +7,7 @@ from tempfile import mkdtemp
 from helpers import apology, login_required, lookup, usd
 import entities.transaction
 import hashlib
+import time
 
 def get_user_transactions(user_id, config):
 
@@ -32,7 +33,7 @@ def get_user_transactions(user_id, config):
         return data
 
 
-def create_transaction(transaction, config):
+def create_transaction(transaction, user_funds, config):
     # generate_password_hash https://werkzeug.palletsprojects.com/en/1.0.x/utils/#werkzeug.security.generate_password_hash
     # No need for batch updates here, as users are single creation only.
 
@@ -45,14 +46,47 @@ def create_transaction(transaction, config):
     # HASH entire transaction object, check if has is in DB if not insert
     # transactions can never be the same
     # DO NOT CHANGE
-    transaction_hash = hashlib.sha256()
-    transaction_hash.update(transaction)
+    transaction_hash = hashlib.sha256(
+        str(transaction.type).encode('utf-8') +
+        str(transaction.user_id).encode('utf-8') +
+        str(transaction.purchase_value).encode('utf-8') +
+        str(transaction.currency).encode('utf-8') +
+        str(transaction.stock_no).encode('utf-8') +
+        str(transaction.stock_symbol).encode('utf-8') +
+        str(transaction.exchange_id).encode('utf-8') +
+        str(time.time()).encode('utf-8')
+    ).hexdigest()
+
+    print(transaction_hash)
+
+    transaction.transaction_hash = transaction_hash
 
     if not config.db.execute("SELECT 1 FROM transactions WHERE transaction_hash = ?", transaction_hash):
-        if config.db.execute("INSERT INTO transactions (username, hash) VALUES (?, ?)", username, user_hash):
+        transaction_id = config.db.execute("INSERT INTO transactions " +
+            "(type, user_id, purchase_value, currency, stock_no, stock_symbol, exchange_id, complete, transaction_hash) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            transaction.type,
+            transaction.user_id,
+            transaction.purchase_value,
+            transaction.currency,
+            transaction.stock_no,
+            transaction.stock_symbol,
+            transaction.exchange_id,
+            1,
+            transaction.transaction_hash
+        )
+
+        if transaction_id:
             # update user table, minus the value of transaction itself
+            updated_user_funds = float(user_funds) - float(transaction.purchase_value)
+            # minus funds from user, based on their purchase
+            user_update = config.db.execute("UPDATE users SET cash = ? WHERE id = ?", updated_user_funds, transaction.user_id)
+
             data["success"] = True
-            data["data"] = {"user_id": db.lastrowid}
+            data["data"] = {
+                "transaction_id": transaction_id,
+                "user_update": user_update
+            }
             return data
         else:
             data["success"] = False
@@ -61,7 +95,7 @@ def create_transaction(transaction, config):
 
 
     data["success"] = False
-    data["error"] = "Username already exists"
+    data["error"] = "Transaction already exists"
     return data
 
 
@@ -81,8 +115,6 @@ def check_user_affordability(stock_price, no_of_stocks, user_id, config):
     transaction_amount = float(stock_price) * float(no_of_stocks)
 
     funds = config.db.execute("SELECT cash FROM users WHERE id = ? AND cash >= ?", user_id, transaction_amount)
-
-    print(funds[0]['cash'])
 
     if funds:
         data["success"] = True
@@ -106,7 +138,7 @@ def get_exchange_id(exchange_name, config):
 
     exchange = config.db.execute("SELECT id FROM exchanges WHERE name LIKE ?", exchange_name)
 
-    if funds:
+    if exchange:
         data["success"] = True
         data["data"] = {
             "exchange_id": exchange[0]["id"]

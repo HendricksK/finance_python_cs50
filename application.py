@@ -124,14 +124,19 @@ def buy():
                 transaction = Transaction(
                     "BUY",
                     session.get("user_id"),
-                    user_funds["data"].transaction_amount,
+                    user_funds["data"]["transaction_amount"],
                     app.config.default_currency,
                     no_of_stocks,
                     symbol,
                     exchange_id, # 1 for now.
                     0)
 
-                print(transaction)
+                create_transaction(transaction, user_funds["data"]["user_wallet"], app.config)
+
+                return render_template("buy.html",
+                    error="",
+                    data=data)
+
             else:
                 return render_template("buy.html",
                         error="An error has occured",
@@ -275,7 +280,7 @@ def register():
             session["user_id"] = data["data"]["user_id"]
 
         # Redirect user to home page
-        return redirect("/account.html")
+        return redirect("/index")
 
     # User reached route via GET (as by clicking a link or via redirect)
     else:
