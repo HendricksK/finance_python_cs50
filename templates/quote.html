@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Register
+{% endblock %}
+
+{% block main %}
+    <div>{{ error }}</div><br>
+    <section id="quote-section">
+        <div id="quote-stock">
+            <form action="/quote" method="post">
+                <div class="form-group">
+                    <input autocomplete="off" autofocus class="form-control" name="stock-symbol" placeholder="Stock" type="text">
+                    <button class="btn btn-primary" type="submit">Get Stock Quote</button>
+                </div>
+            </form>
+        </div>
+    </section>
+    <!-- display the top 10 stocks of the day -->
+    {% if single_stock %}
+        {% include 'partials/quoted.html' %}
+    {% else %}
+        {% include 'partials/most_active_stocks.html' %}
+    {% endif %}
+
+{% endblock %}
