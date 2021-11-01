@@ -78,20 +78,16 @@ def check_user_affordability(stock_price, no_of_stocks, user_id, config):
         "data": False,
     }
 
-    print(stock_price)
-    print(no_of_stocks)
-
     transaction_amount = float(stock_price) * float(no_of_stocks)
 
-    print(transaction_amount)
-    print(user_id)
-
     funds = config.db.execute("SELECT cash FROM users WHERE id = ? AND cash >= ?", user_id, transaction_amount)
+
+    print(funds[0]['cash'])
 
     if funds:
         data["success"] = True
         data["data"] = {
-            "user_wallet": float(funds),
+            "user_wallet": float(funds[0]['cash']),
             "transaction_amount": transaction_amount
         }
         return data
@@ -108,12 +104,12 @@ def get_exchange_id(exchange_name, config):
         "data": False,
     }
 
-    exchange = config.db.execute("SELECT id FROM exchanges WHERE name = ?", exchange_name)
+    exchange = config.db.execute("SELECT id FROM exchanges WHERE name LIKE ?", exchange_name)
 
     if funds:
         data["success"] = True
         data["data"] = {
-            "exchange_id": exchange
+            "exchange_id": exchange[0]["id"]
         }
         return data
     else:

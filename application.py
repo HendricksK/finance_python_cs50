@@ -15,7 +15,7 @@ from controllers.account import account_login, account_register
 from controllers.iex import mostactive_stocks, quote_stock, get_stock_variable
 # transaction controller, entity
 from entities.transaction import Transaction
-from controllers.transaction import get_user_transactions, create_transaction, check_user_affordability
+from controllers.transaction import get_user_transactions, create_transaction, check_user_affordability, get_exchange_id
 
 # Finish up imports
 
@@ -114,7 +114,7 @@ def buy():
 
             if user_funds["success"]:
                 stock_exchange_name = get_stock_variable(app.config["IEX_BASE_URL"], app.config["API_KEY"], symbol.lower(), "primaryExchange")
-                exchange = get_exchange_id(stock_exchange_name, app.config)
+                exchange = get_exchange_id(stock_exchange_name["data"], app.config)
 
                 if exchange["success"]:
                     exchange_id = exchange["data"].exchange_id
