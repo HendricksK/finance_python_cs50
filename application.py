@@ -116,7 +116,7 @@ def buy():
                 stock_exchange_name = get_stock_variable(app.config["IEX_BASE_URL"], app.config["API_KEY"], symbol.lower(), "primaryExchange")
                 exchange = get_exchange_id(stock_exchange_name, app.config)
 
-                if exchange["success"]
+                if exchange["success"]:
                     exchange_id = exchange["data"].exchange_id
                 else:
                     exchange_id = -99

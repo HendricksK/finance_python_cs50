@@ -101,7 +101,7 @@ def check_user_affordability(stock_price, no_of_stocks, user_id, config):
         data["error"] = "User does not have enough funds"
         return data
 
-def get_exchange_id(exchange_name, config)
+def get_exchange_id(exchange_name, config):
     data = {
         "error": False,
         "success": False,
