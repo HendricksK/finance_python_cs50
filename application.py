@@ -10,12 +10,12 @@ from datetime import timedelta
 
 from helpers import apology, login_required, lookup, usd
 # user controller
-from controllers.account import account_login, account_register
+from controllers.account import account_login, account_register, get_user_cash_total
 # iex controller
 from controllers.iex import mostactive_stocks, quote_stock, get_stock_variable
 # transaction controller, entity
 from entities.transaction import Transaction
-from controllers.transaction import get_user_transactions, create_transaction, check_user_affordability, get_exchange_id
+from controllers.transaction import get_user_transactions, create_transaction, check_user_affordability, get_exchange_id, get_user_stocks
 
 # Finish up imports
 
@@ -69,7 +69,36 @@ def index():
     if not request.method == "GET":
         return apology("Forbidden", 403)
     else:
-        return render_template("index.html")
+        response = get_user_stocks(session.get("user_id"), app.config)
+        user_cash = get_user_cash_total(session.get("user_id"), app.config)
+        total_stocks_value = 0
+
+        if not response["success"]:
+            return render_template("index.html",
+                error="No stocks purchased",
+                data=""
+            )
+        else:
+            for stock in response["data"]["stocks"]:
+                current_stock_price = get_stock_variable(app.config["IEX_BASE_URL"], app.config["API_KEY"], stock["stock_symbol"], "latestPrice")
+                if current_stock_price["success"]:
+                    stock["latest_price"] = current_stock_price["data"]
+                    total_stocks_value =+ stock["no_of_stocks"] * current_stock_price["data"]
+                else:
+                    stock["latest_price"] = "N/A"
+
+            if user_cash["success"]:
+                cash_total = user_cash["data"]["cash"]
+            else:
+                cash_total = "N/A"
+
+            return render_template("index.html",
+                error="",
+                data=response["data"],
+                user_cash_total=cash_total,
+                user_stock_total=total_stocks_value,
+                user_tota_value=cash_total + total_stocks_value
+            )
 
 @app.route("/buy", methods=["GET", "POST"])
 def buy():
@@ -138,10 +167,7 @@ def buy():
                     data=data)
 
             else:
-                return render_template("buy.html",
-                        error="An error has occured",
-                        data=data
-                    )
+                return apology("Not enough funds")
     else:
         return render_template("buy.html",
             error="",

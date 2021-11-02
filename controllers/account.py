@@ -73,5 +73,27 @@ def account_password_forgot():
 def log(user):
     pass
 
+def get_user_cash_total(user_id, config):
+    data = {
+        "error": False,
+        "success": False,
+        "data": False,
+    }
+
+    cash = config.db.execute("SELECT cash FROM users WHERE id = ?", user_id)
+
+    if cash:
+        data["success"] = True
+        data["data"] = {
+            "cash": cash[0]["cash"]
+        }
+        return data
+    else:
+        data["success"] = False
+        data["error"] = "Stocks not found in database"
+        data["data"] = {
+            "cash": ""
+        }
+        return data
 
 

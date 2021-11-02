@@ -1,0 +1,1 @@
+SELECT SUM(purchase_value), SUM(stock_no), stock_symbol FROM transactions WHERE user_id = 1 AND type = 'BUY' AND complete = 1 GROUP BY stock_symbol;

@@ -18,3 +18,8 @@ CREATE TABLE exchanges (
 	region VARCHAR(10) NOT NULL
 );
 
+CREATE TABLE stocks (
+	id INTERGER PRIMARY KEY AUTOINCREMENT,
+	user_id BIGINT NOT NULL,
+	stock_symbol stock_symbol VARCHAR(10) NOT NULL
+);

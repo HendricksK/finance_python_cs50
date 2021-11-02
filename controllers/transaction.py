@@ -149,3 +149,26 @@ def get_exchange_id(exchange_name, config):
         data["error"] = True
         data["error"] = "Exchange not found in database"
         return data
+
+def get_user_stocks(user_id, config):
+    data = {
+        "error": False,
+        "success": False,
+        "data": False,
+    }
+
+    stocks = config.db.execute("SELECT SUM(purchase_value) AS purchase_value, SUM(stock_no) AS no_of_stocks, stock_symbol FROM transactions WHERE user_id = ? AND type = 'BUY' AND complete = 1 GROUP BY stock_symbol", user_id)
+
+    if stocks:
+        data["success"] = True
+        data["data"] = {
+            "stocks": stocks
+        }
+        return data
+    else:
+        data["success"] = False
+        data["error"] = "Stocks not found in database"
+        data["data"] = {
+            "stocks": ""
+        }
+        return data
