@@ -15,7 +15,7 @@ from controllers.account import account_login, account_register, get_user_cash_t
 from controllers.iex import mostactive_stocks, quote_stock, get_stock_variable
 # transaction controller, entity
 from entities.transaction import Transaction
-from controllers.transaction import get_user_transactions, create_transaction, check_user_affordability, get_exchange_id, get_user_stocks
+from controllers.transaction import get_user_transactions, create_transaction, check_user_affordability, get_exchange_id, get_user_stocks, get_user_transaction_history, get_user_stock_by_symbol, get_current_user_cash
 
 # Finish up imports
 
@@ -156,7 +156,7 @@ def buy():
                     user_funds["data"]["transaction_amount"],
                     app.config.default_currency,
                     no_of_stocks,
-                    symbol,
+                    symbol.lower(),
                     exchange_id, # 1 for now.
                     0)
 
@@ -174,14 +174,32 @@ def buy():
             data=data)
 
 
-@app.route("/history")
+@app.route("/history", methods=["GET"])
 def history():
 
     if session.get("user_id") is None:
         return redirect("/login")
+    # Data needs to be git gud either way
+    response = get_user_transaction_history(session.get("user_id"), app.config, 1)
 
-    """Show history of transactions"""
-    return apology("TODO")
+    if not response["success"]:
+        return render_template("history.html",
+            error="An error has occured",
+            data=""
+        )
+
+    data = {
+        "transactions": response["data"]["transactions"],
+        "currency": app.config.default_currency
+    }
+
+    if request.method == "GET":
+        return render_template("history.html",
+            error="",
+            data=data
+        )
+    else:
+        return apology("403 cannot post")
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -321,9 +339,72 @@ def sell():
 
     if session.get("user_id") is None:
         return redirect("/login")
+    # Data needs to be git gud either way
+    response = get_user_transaction_history(session.get("user_id"), app.config, 1)
 
-    """Sell shares of stock"""
-    return apology("TODO")
+    if not response["success"]:
+        return render_template("sell.html",
+            error="An error has occured",
+            data=""
+        )
+
+    data = {
+        "transactions": response["data"]["transactions"],
+        "currency": app.config.default_currency
+    }
+
+    if request.method == "POST":
+        symbol = request.form.get("stock-symbol")
+        no_of_stocks = request.form.get("no-of-stock")
+
+        if int(no_of_stocks) < 1:
+            return render_template("sell.html",
+                    error="Cannot purchase less than 1 stock",
+                    data=data
+                )
+
+        current_stock = get_user_stock_by_symbol(session.get("user_id"), symbol.lower(), app.config)
+
+        if not current_stock["success"]:
+            return render_template("sell.html",
+                    error="Could not retrieve stock price",
+                    data=data
+                )
+
+        if float(no_of_stocks) > float(current_stock["data"]["current_stock"]):
+            return render_template("sell.html",
+                    error="You do not have that many stocks to sell",
+                    data=data
+                )
+        else:
+            current_stock_price = get_stock_variable(app.config["IEX_BASE_URL"], app.config["API_KEY"], symbol.lower(), "latestPrice")
+
+            if current_stock_price["success"]:
+                transaction = Transaction(
+                    "SELL",
+                    session.get("user_id"),
+                    float(no_of_stocks) * float(current_stock_price["data"]),
+                    app.config.default_currency,
+                    no_of_stocks,
+                    symbol,
+                    -99, # -99 for now, I got lazy
+                    0)
+
+                user_funds = get_current_user_cash(session.get("user_id"), app.config)
+                create_transaction(transaction, user_funds["data"]["cash"], app.config)
+
+                return render_template("sell.html",
+                    error="",
+                    data=data)
+            else:
+                return render_template("sell.html",
+                    error="An error has occured, transaction was not completed",
+                    data=data
+                )
+    else:
+        return render_template("sell.html",
+            error="",
+            data=data)
 
 
 def errorhandler(e):

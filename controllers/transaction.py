@@ -78,7 +78,10 @@ def create_transaction(transaction, user_funds, config):
 
         if transaction_id:
             # update user table, minus the value of transaction itself
-            updated_user_funds = float(user_funds) - float(transaction.purchase_value)
+            if transaction.type == "BUY":
+                updated_user_funds = float(user_funds) - float(transaction.purchase_value)
+            else:
+                updated_user_funds = float(user_funds) + float(transaction.purchase_value)
             # minus funds from user, based on their purchase
             user_update = config.db.execute("UPDATE users SET cash = ? WHERE id = ?", updated_user_funds, transaction.user_id)
 
@@ -170,5 +173,88 @@ def get_user_stocks(user_id, config):
         data["error"] = "Stocks not found in database"
         data["data"] = {
             "stocks": ""
+        }
+        return data
+
+def get_user_transaction_history(user_id, config, completed = 1):
+    data = {
+        "error": False,
+        "success": False,
+        "data": False,
+    }
+
+    # work on using range to get data as chunks
+    transactions = config.db.execute("SELECT * FROM transactions WHERE user_id = ? AND complete = ?;", user_id, completed)
+
+    if transactions:
+        data["success"] = True
+        data["data"] = {
+            "transactions": transactions
+        }
+        return data
+    else:
+        data["success"] = False
+        data["error"] = "No transaction found for user"
+        data["data"] = {
+            "transactions": ""
+        }
+        return data
+
+def get_user_stock_by_symbol(user_id, stock_symbol, config):
+    data = {
+        "error": False,
+        "success": False,
+        "data": False,
+    }
+
+    stock_bought = config.db.execute("SELECT SUM(stock_no) AS no_of_stocks FROM transactions WHERE user_id = ? AND type = 'BUY' AND stock_symbol = ? AND complete = 1 GROUP BY stock_symbol", user_id, stock_symbol)
+    stock_sold = config.db.execute("SELECT SUM(stock_no) AS no_of_stocks FROM transactions WHERE user_id = ? AND type = 'SELL' AND stock_symbol = ? AND complete = 1 GROUP BY stock_symbol", user_id, stock_symbol)
+
+    if not stock_bought:
+        stock_bought = 0
+    else:
+        stock_bought = stock_bought[0]["no_of_stocks"]
+
+    if not stock_sold:
+        stock_sold = 0
+    else:
+        stock_sold = stock_sold[0]["no_of_stocks"];
+
+    current_stock = stock_bought - stock_sold
+
+    if current_stock:
+        data["success"] = True
+        data["data"] = {
+            "current_stock": current_stock
+        }
+        return data
+    else:
+        data["success"] = False
+        data["error"] = "Stocks not found in database"
+        data["data"] = {
+            "current_stock": ""
+        }
+        return data
+
+def get_current_user_cash(user_id, config):
+    data = {
+        "error": False,
+        "success": False,
+        "data": False,
+    }
+
+    funds = config.db.execute("SELECT cash FROM users WHERE id = ?", user_id)
+
+    if funds:
+        data["success"] = True
+        data["data"] = {
+            "cash": funds[0]["cash"]
+        }
+        return data
+    else:
+        data["success"] = False
+        data["error"] = "Cannot find users cash"
+        data["data"] = {
+            "cash": ""
         }
         return data

@@ -1,14 +1,14 @@
 {% extends "layout.html" %}
 
 {% block title %}
-    Buy
+    Sell
 {% endblock %}
 
 {% block main %}
     <div>{{ error }}</div><br>
     <section id="quote-section" style="width:100%; margin: 0 auto;">
         <div id="quote-stock" style="width:50%; margin: 0 auto;">
-            <form action="/buy" method="post">
+            <form action="/sell" method="post">
                 <div class="form-group">
                     <value hidden name="currency" value="{{data.currency}}"></value>
                     <h1>Purchase stocks</h1>
@@ -18,24 +18,20 @@
                     <input autocomplete="off" autofocus class="form-control" name="stock-symbol" placeholder="Stock" type="text" style="width:100%; margin: 0 auto;">
                 </div>
                 <div class="form-group">
-                    <label for="stock-symbol">Currency value</label>
-                    <input disabled autocomplete="off" autofocus class="form-control" name="currency-amount" placeholder="Currency to spend" type="text" style="width:100%; margin: 0 auto;">
-                </div>
-                <div class="form-group">
                     <label for="stock-symbol">Number of stocks</label>
-                    <input autocomplete="off" autofocus class="form-control" name="no-of-stock" placeholder="Amount of stocks to purchase" type="number" style="width:100%; margin: 0 auto;">
+                    <input autocomplete="off" autofocus class="form-control" name="no-of-stock" placeholder="Amount of stocks to sell" type="number" style="width:100%; margin: 0 auto;">
                 </div>
                 <div class="form-group">
-                    <button class="btn btn-primary" type="submit" >Purchase stocks</button>
+                    <button class="btn btn-primary" type="submit" >Sell stocks</button>
                 </div>
             </form>
         </div>
     </section>
 
-    {% include 'partials/most_active_stocks.html' %}
+    {% include 'partials/history_table.html' %}
 
 <!-- Call js file here -->
 <!-- Not a fan of this implementation of JS includes would prefer, /assets/{template}/file.js -->
-<script type="text/javascript" src="/static/buy.js"></script>
+<script type="text/javascript" src="/static/sell.js"></script>
 
 {% endblock %}
